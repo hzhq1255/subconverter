@@ -1097,11 +1097,21 @@ std::string proxyToSurge(std::vector<Proxy> &nodes, const std::string &base_conf
             ini.set(real_section, "peer", "(" + generatePeer(x) + ")");
             break;
         case ProxyType::Hysteria2:
-            if(surge_ver < 4)
+            if(surge_ver < 4 && surge_ver != -3)
                 continue;
-            proxy = "hysteria, " + hostname + ", " + port + ", password=" + password;
+            // Surfboard (ver=-3) uses "hysteria2" keyword, Surge (ver>=4) uses "hysteria"
+            if(surge_ver == -3)
+                proxy = "hysteria2, " + hostname + ", " + port + ", password=" + password;
+            else
+                proxy = "hysteria, " + hostname + ", " + port + ", password=" + password;
             if(x.DownSpeed)
                 proxy += ", download-bandwidth=" + x.DownSpeed;
+            // Surfboard specific: port-hopping
+            if(surge_ver == -3 && !x.Ports.empty())
+                proxy += ", port-hopping=\"" + x.Ports + "\"";
+            // Surfboard specific: port-hopping-interval
+            if(surge_ver == -3 && x.HopInterval > 0)
+                proxy += ", port-hopping-interval=" + std::to_string(x.HopInterval);
             if(!scv.is_undef())
                 proxy += ",skip-cert-verify=" + std::string(scv.get() ? "true" : "false");
             if(!x.Fingerprint.empty())
